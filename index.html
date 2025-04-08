@@ -1,10 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login / Signup</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: #f0f0f0;
+    }
+    .card {
+      padding: 2rem;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      width: 300px;
+    }
+    .card h2 {
+      margin-bottom: 1rem;
+    }
+    input {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      width: 100%;
+      padding: 0.5rem;
+      background: #0070f3;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .toggle {
+      margin-top: 1rem;
+      text-align: center;
+    }
+  </style>
+</head>
 <body>
-  <header>
-    <a href="index.html">Home</a>
-    <a href="about.html">About</a>
+  <div class="card">
+    <h2 id="form-title">Login</h2>
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password" />
+    <button id="submit-btn">Login</button>
+    <div class="toggle">
+      <span id="toggle-text">Don't have an account? <a href="?mode=signup">Sign up</a></span>
+    </div>
+  </div>
 
-    <button class="login-btn" onclick="window.location.href='login.html'">Login / Signup</button>
-    <img src="profile.png" class="profile-icon" onclick="window.location.href='profile.html'" style="display:none; width: 30px;" />
-  </header>
-  <script src="auth.js" type="module"></script>
+  <script>
+    const supabase = supabase.createClient(
+      'https://your-project.supabase.co',
+      'your-public-anon-key'
+    );
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get("mode") || "login";
+
+    const formTitle = document.getElementById("form-title");
+    const submitBtn = document.getElementById("submit-btn");
+    const toggleText = document.getElementById("toggle-text");
+
+    if (mode === "signup") {
+      formTitle.innerText = "Create Account";
+      submitBtn.innerText = "Sign Up";
+      toggleText.innerHTML = 'Already have an account? <a href="?mode=login">Login</a>';
+    }
+
+    submitBtn.addEventListener("click", async () => {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      if (mode === "signup") {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+        if (error) alert("Signup failed: " + error.message);
+        else alert("Signup success! Please verify your email.");
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (error) alert("Login failed: " + error.message);
+        else {
+          alert("Login successful!");
+          // redirect to profile page or dashboard
+          window.location.href = "/profile.html";
+        }
+      }
+    });
+  </script>
 </body>
+</html>
