@@ -1,33 +1,113 @@
-<div id="profile-section">
-  <p>Email: <span id="email"></span></p>
-  <input type="text" id="full_name" />
-  <textarea id="bio"></textarea>
-  <button onclick="updateProfile()">Save</button>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Profile</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: #f0f0f0;
+    }
+    .card {
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      width: 300px;
+    }
+    h2 {
+      margin-bottom: 1rem;
+    }
+    input, button {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #0070f3;
+      color: white;
+      border: none;
+    }
+    .logout {
+      background: #e00;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Your Profile</h2>
+    <input type="text" id="email" placeholder="Email" disabled />
+    <input type="text" id="full_name" placeholder="Full Name" />
+    <input type="text" id="phone" placeholder="Phone Number" />
+    <button onclick="updateProfile()">Update</button>
+    <button class="logout" onclick="logout()">Logout</button>
+  </div>
 
-<script type="module">
-  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-  const supabase = createClient('https://xyz.supabase.co', 'your-anon-key');
+  <script>
+    const supabase = supabase.createClient(
+      'https://aafmgvxhpdjsqrbjkzps.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhZm1ndnhocGRqc3FyYmprenBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxMTE2NjEsImV4cCI6MjA1OTY4NzY2MX0.0uxlvXQ-aX5Jk8ICsird0SCaDPgbh5NQkAI6UGIxj1Q'
+    );
 
-  async function loadProfile() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return window.location.href = "login.html";
+    async function loadProfile() {
+      const {
+        data: { user },
+        error
+      } = await supabase.auth.getUser();
 
-    const { data, error } = await supabase.from('users').select('*').eq('email', user.email).single();
+      if (error || !user) {
+        window.location.href = '/?mode=login';
+        return;
+      }
 
-    document.getElementById('email').innerText = user.email;
-    document.getElementById('full_name').value = data.full_name;
-    document.getElementById('bio').value = data.bio || '';
-  }
+      document.getElementById('email').value = user.email;
 
-  window.updateProfile = async function () {
-    const full_name = document.getElementById('full_name').value;
-    const bio = document.getElementById('bio').value;
-    const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
 
-    await supabase.from('users').update({ full_name, bio }).eq('email', user.email);
-    alert("Profile Updated!");
-  }
+      if (profile) {
+        document.getElementById('full_name').value = profile.full_name || '';
+        document.getElementById('phone').value = profile.phone || '';
+      }
+    }
 
-  loadProfile();
-</script>
+    async function updateProfile() {
+      const {
+        data: { user }
+      } = await supabase.auth.getUser();
+
+      const updates = {
+        id: user.id,
+        full_name: document.getElementById('full_name').value,
+        phone: document.getElementById('phone').value,
+        updated_at: new Date(),
+      };
+
+      const { error } = await supabase
+        .from('profiles')
+        .upsert(updates);
+
+      if (error) alert('Update failed: ' + error.message);
+      else alert('Profile updated!');
+    }
+
+    async function logout() {
+      await supabase.auth.signOut();
+      window.location.href = '/';
+    }
+
+    loadProfile();
+  </script>
+</body>
+</html>
