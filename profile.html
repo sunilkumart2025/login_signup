@@ -44,11 +44,16 @@
 <body>
   <div class="card">
     <h2>Your Profile</h2>
-    <input type="text" id="email" placeholder="Email" disabled />
-    <input type="text" id="full_name" placeholder="Full Name" />
-    <input type="text" id="phone" placeholder="Phone Number" />
-    <button onclick="updateProfile()">Update</button>
-    <button class="logout" onclick="logout()">Logout</button>
+    <!-- Same head and Supabase link -->
+      <input type="text" id="email" placeholder="Email" disabled />
+      <input type="text" id="full_name" placeholder="Full Name" />
+      <input type="text" id="phone" placeholder="Phone Number" />
+      <input type="date" id="dob" />
+      <input type="text" id="address" placeholder="Address" />
+      <input type="text" id="city" placeholder="City" />
+      <input type="file" id="avatar" accept="image/*" />
+      <img id="avatar-preview" src="" width="100" style="display: none; margin-bottom: 10px;" />
+
   </div>
 
   <script>
