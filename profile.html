@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Profile</title>
+  <title>Your Profile</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
     body {
@@ -19,47 +19,59 @@
       padding: 2rem;
       border-radius: 10px;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-      width: 300px;
+      width: 320px;
     }
     h2 {
       margin-bottom: 1rem;
     }
     input, button {
       width: 100%;
-      padding: 0.5rem;
+      padding: 0.6rem;
       margin-bottom: 1rem;
-      border-radius: 5px;
+      border-radius: 6px;
       border: 1px solid #ccc;
+      font-size: 14px;
     }
     button {
       background: #0070f3;
       color: white;
       border: none;
+      cursor: pointer;
     }
-    .logout {
+    button.logout {
       background: #e00;
+      margin-top: -10px;
+    }
+    #avatar-preview {
+      display: none;
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 10px;
+      margin-bottom: 10px;
     }
   </style>
 </head>
 <body>
   <div class="card">
     <h2>Your Profile</h2>
-    <!-- Same head and Supabase link -->
-      <input type="text" id="email" placeholder="Email" disabled />
-      <input type="text" id="full_name" placeholder="Full Name" />
-      <input type="text" id="phone" placeholder="Phone Number" />
-      <input type="date" id="dob" />
-      <input type="text" id="address" placeholder="Address" />
-      <input type="text" id="city" placeholder="City" />
-      <input type="file" id="avatar" accept="image/*" />
-      <img id="avatar-preview" src="" width="100" style="display: none; margin-bottom: 10px;" />
-
+    <img id="avatar-preview" src="" />
+    <input type="file" id="avatar" accept="image/*" />
+    <input type="text" id="email" placeholder="Email" disabled />
+    <input type="text" id="full_name" placeholder="Full Name" />
+    <input type="text" id="phone" placeholder="Phone Number" />
+    <input type="date" id="dob" />
+    <input type="text" id="address" placeholder="Address" />
+    <input type="text" id="city" placeholder="City" />
+    <button onclick="updateProfile()">Update</button>
+    <button class="logout" onclick="logout()">Logout</button>
   </div>
 
   <script>
+    // ⚙️ Replace with your Supabase keys
     const supabase = supabase.createClient(
-      'https://aafmgvxhpdjsqrbjkzps.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhZm1ndnhocGRqc3FyYmprenBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxMTE2NjEsImV4cCI6MjA1OTY4NzY2MX0.0uxlvXQ-aX5Jk8ICsird0SCaDPgbh5NQkAI6UGIxj1Q'
+      'https://your-project-id.supabase.co',
+      'your-public-anon-key'
     );
 
     async function loadProfile() {
@@ -84,6 +96,14 @@
       if (profile) {
         document.getElementById('full_name').value = profile.full_name || '';
         document.getElementById('phone').value = profile.phone || '';
+        document.getElementById('dob').value = profile.dob || '';
+        document.getElementById('address').value = profile.address || '';
+        document.getElementById('city').value = profile.city || '';
+
+        if (profile.avatar_url) {
+          document.getElementById('avatar-preview').src = profile.avatar_url;
+          document.getElementById('avatar-preview').style.display = 'block';
+        }
       }
     }
 
@@ -92,16 +112,40 @@
         data: { user }
       } = await supabase.auth.getUser();
 
+      let avatarUrl = '';
+
+      const file = document.getElementById('avatar').files[0];
+      if (file) {
+        const { data, error } = await supabase.storage
+          .from('avatars')
+          .upload(`public/${user.id}.jpg`, file, {
+            cacheControl: '3600',
+            upsert: true
+          });
+
+        if (error) {
+          alert('Image upload failed: ' + error.message);
+          return;
+        }
+
+        const { data: urlData } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(`public/${user.id}.jpg`);
+        avatarUrl = urlData.publicUrl;
+      }
+
       const updates = {
         id: user.id,
         full_name: document.getElementById('full_name').value,
         phone: document.getElementById('phone').value,
-        updated_at: new Date(),
+        dob: document.getElementById('dob').value,
+        address: document.getElementById('address').value,
+        city: document.getElementById('city').value,
+        avatar_url: avatarUrl,
+        updated_at: new Date()
       };
 
-      const { error } = await supabase
-        .from('profiles')
-        .upsert(updates);
+      const { error } = await supabase.from('profiles').upsert(updates);
 
       if (error) alert('Update failed: ' + error.message);
       else alert('Profile updated!');
