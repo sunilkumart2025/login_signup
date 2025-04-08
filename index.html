@@ -40,9 +40,14 @@
       border-radius: 5px;
       cursor: pointer;
     }
-    .toggle {
+    .toggle, .forgot-password {
       margin-top: 1rem;
       text-align: center;
+    }
+    .forgot-password a {
+      font-size: 0.9rem;
+      color: #0070f3;
+      text-decoration: none;
     }
   </style>
 </head>
@@ -52,6 +57,9 @@
     <input type="email" id="email" placeholder="Email" />
     <input type="password" id="password" placeholder="Password" />
     <button id="submit-btn">Login</button>
+    <div class="forgot-password">
+      <a href="#" id="forgot-password-link">Forgot Password?</a>
+    </div>
     <div class="toggle">
       <span id="toggle-text">Don't have an account? <a href="?mode=signup">Sign up</a></span>
     </div>
@@ -69,16 +77,23 @@
     const formTitle = document.getElementById("form-title");
     const submitBtn = document.getElementById("submit-btn");
     const toggleText = document.getElementById("toggle-text");
+    const forgotPasswordLink = document.getElementById("forgot-password-link");
 
     if (mode === "signup") {
       formTitle.innerText = "Create Account";
       submitBtn.innerText = "Sign Up";
       toggleText.innerHTML = 'Already have an account? <a href="?mode=login">Login</a>';
+      forgotPasswordLink.style.display = "none";
     }
 
-    submitBtn.addEventListener("click", async () => {
+    submitBtn.onclick = async () => {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
+
+      if (!email || !password) {
+        alert("Please enter email and password.");
+        return;
+      }
 
       if (mode === "signup") {
         const { data, error } = await supabase.auth.signUp({
@@ -86,7 +101,7 @@
           password,
         });
         if (error) alert("Signup failed: " + error.message);
-        else alert("Signup success! Please verify your email.");
+        else alert("Signup successful! Please verify your email.");
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
@@ -95,11 +110,24 @@
         if (error) alert("Login failed: " + error.message);
         else {
           alert("Login successful!");
-          // redirect to profile page or dashboard
           window.location.href = "/profile.html";
         }
       }
-    });
+    };
+
+    forgotPasswordLink.onclick = async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value;
+      if (!email) {
+        alert("Please enter your email above first.");
+        return;
+      }
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: 'https://your-site.com/reset-password.html'
+      });
+      if (error) alert("Reset failed: " + error.message);
+      else alert("Password reset email sent!");
+    };
   </script>
 </body>
 </html>
