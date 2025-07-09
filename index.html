@@ -2,132 +2,97 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login / Signup</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PayNexa Gateway – UPI Payment</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <style>
     body {
-      font-family: sans-serif;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      background: #f0f0f0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f1f5ff;
+      text-align: center;
+      padding: 40px;
     }
-    .card {
-      padding: 2rem;
+    .container {
+      max-width: 450px;
+      margin: auto;
       background: white;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-      width: 300px;
+      padding: 25px;
+      border-radius: 16px;
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
     }
-    .card h2 {
-      margin-bottom: 1rem;
+    h1 {
+      color: #0044cc;
+      margin-bottom: 20px;
     }
     input {
-      width: 100%;
-      padding: 0.5rem;
-      margin-bottom: 1rem;
+      padding: 10px;
+      margin: 10px 0;
+      width: 80%;
+      font-size: 18px;
+      border-radius: 8px;
       border: 1px solid #ccc;
-      border-radius: 5px;
     }
     button {
-      width: 100%;
-      padding: 0.5rem;
-      background: #0070f3;
+      padding: 10px 25px;
+      font-size: 18px;
+      background-color: #0044cc;
       color: white;
       border: none;
-      border-radius: 5px;
+      border-radius: 8px;
       cursor: pointer;
+      margin-top: 10px;
     }
-    .toggle, .forgot-password {
-      margin-top: 1rem;
-      text-align: center;
-    }
-    .forgot-password a {
-      font-size: 0.9rem;
-      color: #0070f3;
+    #payLink {
+      display: block;
+      margin-top: 20px;
+      font-size: 17px;
       text-decoration: none;
+      color: #006600;
+      font-weight: bold;
+    }
+    canvas {
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2 id="form-title">Login</h2>
-    <input type="email" id="email" placeholder="Email" />
-    <input type="password" id="password" placeholder="Password" />
-    <button id="submit-btn">Login</button>
-    <div class="forgot-password">
-      <a href="#" id="forgot-password-link">Forgot Password?</a>
-    </div>
-    <div class="toggle">
-      <span id="toggle-text">Don't have an account? <a href="?mode=signup">Sign up</a></span>
-    </div>
+  <div class="container">
+    <h1>💸 SKY Gateway</h1>
+    <p>Enter amount to pay via UPI</p>
+    <input type="number" id="amount" placeholder="Enter amount ₹" />
+    <br />
+    <button onclick="generatePayment()">Generate Payment</button>
+
+    <div id="qrcode"></div>
+    <a id="payLink" href="#" target="_blank" style="display:none;">📲 Pay with UPI App</a>
   </div>
 
   <script>
-    const supabase = supabase.createClient(
-      'https://aafmgvxhpdjsqrbjkzps.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhZm1ndnhocGRqc3FyYmprenBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxMTE2NjEsImV4cCI6MjA1OTY4NzY2MX0.0uxlvXQ-aX5Jk8ICsird0SCaDPgbh5NQkAI6UGIxj1Q'
-    );
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const mode = urlParams.get("mode") || "login";
-
-    const formTitle = document.getElementById("form-title");
-    const submitBtn = document.getElementById("submit-btn");
-    const toggleText = document.getElementById("toggle-text");
-    const forgotPasswordLink = document.getElementById("forgot-password-link");
-
-    if (mode === "signup") {
-      formTitle.innerText = "Create Account";
-      submitBtn.innerText = "Sign Up";
-      toggleText.innerHTML = 'Already have an account? <a href="?mode=login">Login</a>';
-      forgotPasswordLink.style.display = "none";
-    }
-
-    submitBtn.onclick = async () => {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-
-      if (!email || !password) {
-        alert("Please enter email and password.");
+    function generatePayment() {
+      const amount = document.getElementById("amount").value;
+      if (!amount || parseFloat(amount) <= 0) {
+        alert("Please enter a valid amount");
         return;
       }
 
-      if (mode === "signup") {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-        });
-        if (error) alert("Signup failed: " + error.message);
-        else alert("Signup successful! Please verify your email.");
-      } else {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) alert("Login failed: " + error.message);
-        else {
-          alert("Login successful!");
-          window.location.href = "profile.html";
-        }
-      }
-    };
+      const upiID = "8610764927@okbizaxis"; // 👉 Replace this with your actual UPI ID
+      const name = "SKY Gateway";
+      const note = "Payment for order SKY" + Math.floor(Math.random() * 10000);
+      const upiLink = `upi://pay?pa=${upiID}&pn=${encodeURIComponent(name)}&am=${amount}&tn=${encodeURIComponent(note)}`;
 
-    forgotPasswordLink.onclick = async (e) => {
-      e.preventDefault();
-      const email = document.getElementById("email").value;
-      if (!email) {
-        alert("Please enter your email above first.");
-        return;
-      }
-      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'reset-password.html'
+      // Generate QR code
+      const qrCanvas = document.getElementById("qrcode");
+      qrCanvas.innerHTML = ""; // Clear previous
+      QRCode.toCanvas(qrCanvas, upiLink, function (error) {
+        if (error) console.error(error);
       });
-      if (error) alert("Reset failed: " + error.message);
-      else alert("Password reset email sent!");
-    };
+
+      // Show Pay Now link for mobile
+      const payBtn = document.getElementById("payLink");
+      payBtn.href = upiLink;
+      payBtn.style.display = "block";
+      payBtn.innerText = "📲 Tap here to Pay ₹" + amount + " using UPI App";
+    }
   </script>
 </body>
 </html>
